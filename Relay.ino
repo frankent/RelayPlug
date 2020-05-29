@@ -48,18 +48,50 @@ String getMode() {
   return "counting";
 }
 
-void updateMode(PlugMode status) {
+void updateMode(PlugMode status, bool shouldUpdateMQTT = true) {
   if (currentMode != COUNTING && status == COUNTING) {
     currentCount = -3;  
   }
   
   currentMode = status;
-  
+
+  if (!shouldUpdateMQTT) return;
   if (!client.connected()) return;
   
   String currentModeText = getMode();
   client.publish(mqttTopic.c_str(), currentModeText.c_str(), false);
 }
+
+void onMessageArrive(char *topic, byte *payload, unsigned int length) {
+  String msg = "";
+  int i = 0;
+  while (i < length)
+  {
+    msg += (char)payload[i++];
+  }
+
+  if (!msg) return;
+
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  Serial.println(msg);
+
+  if (mqttTopic.equals(topic)) {
+    if (msg.equals("on")) {
+      updateMode(ON, false);  
+    }
+    
+    if (msg.equals("off")) {
+      updateMode(OFF, false);  
+    }
+    
+    if (msg.equals("counting")) {
+      updateMode(COUNTING, false);  
+    }
+  }
+}
+
 void setupMqtt()
 {
   if (WiFi.status() != WL_CONNECTED) return; 
