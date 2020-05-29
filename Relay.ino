@@ -37,6 +37,24 @@ void setup() {
   setupConnection();
 }
 
+String getMode() {
+  if (currentMode == ON) return "on";
+  if (currentMode == OFF) return "off";
+  return "counting";
+}
+
+void updateMode(PlugMode status) {
+  if (currentMode != COUNTING && status == COUNTING) {
+    currentCount = -3;  
+  }
+  
+  currentMode = status;
+  
+  if (!client.connected()) return;
+  
+  String currentModeText = getMode();
+  client.publish(mqttTopic.c_str(), currentModeText.c_str(), false);
+}
 bool isWifiExist() {
   int numberOfNetworks = WiFi.scanNetworks();
   bool isExist = false;
@@ -76,7 +94,7 @@ void setupConnection() {
 void defaultMode() {
   // Timer is done
   if (currentCount > COUNTER_SEC_3HR) {
-    currentMode = OFF;
+    updateMode(OFF);
     currentCount = -3;
     return;
   };
@@ -116,7 +134,16 @@ void offMode() {
   delay(200);
 }
 
-void onMode() {}
+void onMode() {
+  if (!isLedOn) {
+    digitalWrite(D2, HIGH);
+    isLedOn = true;
+  } else {
+    digitalWrite(D2, LOW);
+    isLedOn = false;
+  }
+  delay(100);
+}
 
 void loop() {
   if (WiFi.status() == WL_DISCONNECTED) {
