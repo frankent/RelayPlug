@@ -14,10 +14,10 @@
 enum PlugMode { COUNTING, ON, OFF };
 PlugMode currentMode = COUNTING;
 
-
 // 60Sec * 60Min * 3Hr
 int COUNTER_SEC_3HR = 10800;
 
+bool shouldConnectWifi = true;
 bool isLedOn = false;
 bool isOver = false;
 int currentCount = -3;
@@ -28,6 +28,11 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 String clientId = "ESP-01s-WifiPlug";
+
+const char *mqttServer = "______";
+const int mqttPort = 1883;
+
+String mqttTopic = "condo/" + clientId + "/status";
 
 void setup() {
   Serial.begin(115200);
@@ -55,6 +60,37 @@ void updateMode(PlugMode status) {
   String currentModeText = getMode();
   client.publish(mqttTopic.c_str(), currentModeText.c_str(), false);
 }
+void setupMqtt()
+{
+  if (WiFi.status() != WL_CONNECTED) return; 
+  if (client.connected()) return;
+
+  client.setServer(mqttServer, mqttPort);
+  client.setCallback(onMessageArrive);
+
+  while (!client.connected())
+  {
+    Serial.println("Attempting MQTT connection");
+    // Attempt to connect
+    if (client.connect(clientId.c_str()))
+    {
+      Serial.println("MQTT connected");
+      client.subscribe(mqttTopic.c_str());
+
+      // Update self
+      updateMode(currentMode);
+    }
+    else
+    {
+      Serial.print("failed, rc = ");
+      Serial.print(client.state());
+      Serial.println(" try again in 5 seconds");
+      // Wait 5 seconds before retrying
+      delay(5000);
+    }
+  }
+}
+
 bool isWifiExist() {
   int numberOfNetworks = WiFi.scanNetworks();
   bool isExist = false;
@@ -64,6 +100,13 @@ bool isWifiExist() {
       if (surveySSID.equals(ssid)) {
         isExist = true;
       }
+  }
+
+  if (!isExist) {
+    shouldConnectWifi = false;
+    Serial.print("Cannot found SSID: ");
+    Serial.print(ssid);
+    Serial.println(" in your area");
   }
 
   return isExist;
@@ -87,7 +130,7 @@ void setupConnection() {
   Serial.print("Current IP: ");
   Serial.println(WiFi.localIP());
 
-//  setupMqtt();
+  setupMqtt();
 //  setupOTA();
 }
 
@@ -146,11 +189,14 @@ void onMode() {
 }
 
 void loop() {
-  if (WiFi.status() == WL_DISCONNECTED) {
-    setupConnection();
+  if (shouldConnectWifi) {
+    if (WiFi.status() == WL_DISCONNECTED) {
+      setupConnection();
+    } else {
+      client.loop();
+    }
   }
 
-  
   switch(currentMode) {
     case OFF: offMode(); break;
     case ON: onMode(); break;
