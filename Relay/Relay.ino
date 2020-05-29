@@ -19,7 +19,7 @@ int COUNTER_SEC_3HR = 10800;
 
 bool shouldConnectWifi = true;
 bool isLedOn = false;
-bool isOver = false;
+
 int currentCount = -3;
 
 const char *ssid = "______";
@@ -40,7 +40,7 @@ void setup() {
   pinMode(D2, OUTPUT);
 
   digitalWrite(D2, LOW);
-  
+
   setupConnection();
 }
 
@@ -52,14 +52,14 @@ String getMode() {
 
 void updateMode(PlugMode status, bool shouldUpdateMQTT = true) {
   if (currentMode != COUNTING && status == COUNTING) {
-    currentCount = -3;  
+    currentCount = -3;
   }
-  
+
   currentMode = status;
 
   if (!shouldUpdateMQTT) return;
   if (!client.connected()) return;
-  
+
   String currentModeText = getMode();
   client.publish(mqttTopic.c_str(), currentModeText.c_str(), false);
 }
@@ -81,22 +81,22 @@ void onMessageArrive(char *topic, byte *payload, unsigned int length) {
 
   if (mqttTopic.equals(topic)) {
     if (msg.equals("on")) {
-      updateMode(ON, false);  
+      updateMode(ON, false);
     }
-    
+
     if (msg.equals("off")) {
-      updateMode(OFF, false);  
+      updateMode(OFF, false);
     }
-    
+
     if (msg.equals("counting")) {
-      updateMode(COUNTING, false);  
+      updateMode(COUNTING, false);
     }
   }
 }
 
 void setupMqtt()
 {
-  if (WiFi.status() != WL_CONNECTED) return; 
+  if (WiFi.status() != WL_CONNECTED) return;
   if (client.connected()) return;
 
   client.setServer(mqttServer, mqttPort);
@@ -126,8 +126,8 @@ void setupMqtt()
 }
 
 void setupOTA() {
-  if (WiFi.status() != WL_CONNECTED) return; 
-  
+  if (WiFi.status() != WL_CONNECTED) return;
+
   // Port defaults to 8266
   // ArduinoOTA.setPort(8266);
 
@@ -156,15 +156,15 @@ void setupOTA() {
     Serial.print("Start updating ");
     Serial.println(type);
   });
-  
+
   ArduinoOTA.onEnd([]() {
     Serial.println("\nEnd");
   });
-  
+
   ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
     Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
   });
-  
+
   ArduinoOTA.onError([](ota_error_t error) {
     Serial.printf("Error[%u]: ", error);
     if (error == OTA_AUTH_ERROR)
@@ -189,18 +189,18 @@ void setupOTA() {
     }
   });
 
-  ArduinoOTA.begin();  
+  ArduinoOTA.begin();
 }
 
 bool isWifiExist() {
   int numberOfNetworks = WiFi.scanNetworks();
   bool isExist = false;
- 
-  for(int i =0; i<numberOfNetworks; i++){
-      String surveySSID = WiFi.SSID(i);
-      if (surveySSID.equals(ssid)) {
-        isExist = true;
-      }
+
+  for (int i = 0; i < numberOfNetworks; i++) {
+    String surveySSID = WiFi.SSID(i);
+    if (surveySSID.equals(ssid)) {
+      isExist = true;
+    }
   }
 
   if (!isExist) {
@@ -222,12 +222,12 @@ void setupConnection() {
 
   Serial.print("Connecting.");
   while (WiFi.waitForConnectResult() != WL_CONNECTED) {
-     Serial.print(".");
-     delay(100);
+    Serial.print(".");
+    delay(100);
   }
 
   Serial.println("Connected");
- 
+
   Serial.print("Current IP: ");
   Serial.println(WiFi.localIP());
 
@@ -242,7 +242,7 @@ void defaultMode() {
     currentCount = -3;
     return;
   };
-  
+
   if (currentCount < 0) {
     digitalWrite(D2, HIGH);
     delay(300);
@@ -260,10 +260,10 @@ void defaultMode() {
       digitalWrite(D2, LOW);
       isLedOn = false;
     }
-    
+
     digitalWrite(D0, HIGH);
   }
-  
+
   currentCount += 1;
   delay(1000);
 }
@@ -271,7 +271,7 @@ void defaultMode() {
 void offMode() {
   // Relay - OFF
   digitalWrite(D0, LOW);
-  
+
   digitalWrite(D2, HIGH);
   delay(200);
   digitalWrite(D2, LOW);
@@ -300,7 +300,7 @@ void loop() {
     }
   }
 
-  switch(currentMode) {
+  switch (currentMode) {
     case OFF: offMode(); break;
     case ON: onMode(); break;
     default: defaultMode(); break;
