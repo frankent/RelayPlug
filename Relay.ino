@@ -1,4 +1,9 @@
 #include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266mDNS.h>
+#include <WiFiUdp.h>
+#include <ArduinoOTA.h>
+#include <PubSubClient.h>
 
 #define LED_BUILTIN 1
 #define D0 0
@@ -7,22 +12,65 @@
 #define RX 3
 
 enum PlugMode { COUNTING, ON, OFF };
-
 PlugMode currentMode = COUNTING;
 
-bool isLedOn = false;
-
-bool isOver = false;
-
-int currentCount = -3;
 
 // 60Sec * 60Min * 3Hr
 int COUNTER_SEC_3HR = 10800;
+
+bool isLedOn = false;
+bool isOver = false;
+int currentCount = -3;
+
+const char *ssid = "______";
+const char *password = "______";
+WiFiClient espClient;
+PubSubClient client(espClient);
+
+String clientId = "ESP-01s-WifiPlug";
 
 void setup() {
   Serial.begin(115200);
   pinMode(D0, OUTPUT);
   pinMode(D2, OUTPUT);
+  
+  setupConnection();
+}
+
+bool isWifiExist() {
+  int numberOfNetworks = WiFi.scanNetworks();
+  bool isExist = false;
+ 
+  for(int i =0; i<numberOfNetworks; i++){
+      String surveySSID = WiFi.SSID(i);
+      if (surveySSID.equals(ssid)) {
+        isExist = true;
+      }
+  }
+
+  return isExist;
+}
+
+void setupConnection() {
+  WiFi.hostname(clientId);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+
+  if (!isWifiExist()) return;
+
+  Serial.print("Connecting.");
+  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+     Serial.print(".");
+     delay(100);
+  }
+
+  Serial.println("Connected");
+ 
+  Serial.print("Current IP: ");
+  Serial.println(WiFi.localIP());
+
+//  setupMqtt();
+//  setupOTA();
 }
 
 void defaultMode() {
@@ -71,6 +119,11 @@ void offMode() {
 void onMode() {}
 
 void loop() {
+  if (WiFi.status() == WL_DISCONNECTED) {
+    setupConnection();
+  }
+
+  
   switch(currentMode) {
     case OFF: offMode(); break;
     case ON: onMode(); break;
