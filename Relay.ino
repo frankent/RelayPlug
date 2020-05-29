@@ -38,6 +38,8 @@ void setup() {
   Serial.begin(115200);
   pinMode(D0, OUTPUT);
   pinMode(D2, OUTPUT);
+
+  digitalWrite(D2, LOW);
   
   setupConnection();
 }
@@ -284,6 +286,7 @@ void onMode() {
     digitalWrite(D2, LOW);
     isLedOn = false;
   }
+  digitalWrite(D0, HIGH);
   delay(100);
 }
 
@@ -296,7 +299,6 @@ void loop() {
       ArduinoOTA.handle();
     }
   }
-
 
   switch(currentMode) {
     case OFF: offMode(); break;
