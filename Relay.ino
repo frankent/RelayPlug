@@ -6,6 +6,10 @@
 #define TX 1
 #define RX 3
 
+enum PlugMode { COUNTING, ON, OFF };
+
+PlugMode currentMode = COUNTING;
+
 bool isLedOn = false;
 
 bool isOver = false;
@@ -21,37 +25,55 @@ void setup() {
   pinMode(D2, OUTPUT);
 }
 
-void loop() {
-  if (currentCount < COUNTER_SEC_3HR) {
-    if (currentCount < 0) {
+void defaultMode() {
+  // Timer is done
+  if (currentCount > COUNTER_SEC_3HR) {
+    currentMode = OFF;
+    currentCount = -3;
+    return;
+  };
+  
+  if (currentCount < 0) {
+    digitalWrite(D2, HIGH);
+    delay(300);
+    digitalWrite(D2, LOW);
+    delay(300);
+    digitalWrite(D2, HIGH);
+    delay(300);
+    digitalWrite(D2, LOW);
+    delay(300);
+  } else {
+    if (!isLedOn) {
       digitalWrite(D2, HIGH);
-      delay(300);
-      digitalWrite(D2, LOW);
-      delay(300);
-      digitalWrite(D2, HIGH);
-      delay(300);
-      digitalWrite(D2, LOW);
-      delay(300);
+      isLedOn = true;
     } else {
-      if (!isLedOn) {
-        digitalWrite(D2, HIGH);
-        isLedOn = true;
-      } else {
-        digitalWrite(D2, LOW);
-        isLedOn = false;
-      }
-      
-      digitalWrite(D0, HIGH);
+      digitalWrite(D2, LOW);
+      isLedOn = false;
     }
     
-    currentCount += 1;
-    delay(1000);
+    digitalWrite(D0, HIGH);
   }
-  else {
-    digitalWrite(D0, LOW);
-    digitalWrite(D2, HIGH);
-    delay(200);
-    digitalWrite(D2, LOW);
-    delay(200);
+  
+  currentCount += 1;
+  delay(1000);
+}
+
+void offMode() {
+  // Relay - OFF
+  digitalWrite(D0, LOW);
+  
+  digitalWrite(D2, HIGH);
+  delay(200);
+  digitalWrite(D2, LOW);
+  delay(200);
+}
+
+void onMode() {}
+
+void loop() {
+  switch(currentMode) {
+    case OFF: offMode(); break;
+    case ON: onMode(); break;
+    default: defaultMode(); break;
   }
 }
