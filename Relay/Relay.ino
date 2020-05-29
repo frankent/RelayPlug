@@ -24,6 +24,7 @@ int currentCount = -3;
 
 const char *ssid = "______";
 const char *password = "______";
+
 WiFiClient espClient;
 PubSubClient client(espClient);
 
@@ -255,12 +256,11 @@ void defaultMode() {
   } else {
     if (!isLedOn) {
       digitalWrite(D2, HIGH);
-      isLedOn = true;
     } else {
       digitalWrite(D2, LOW);
-      isLedOn = false;
     }
 
+    isLedOn = !isLedOn;
     digitalWrite(D0, HIGH);
   }
 
@@ -281,11 +281,11 @@ void offMode() {
 void onMode() {
   if (!isLedOn) {
     digitalWrite(D2, HIGH);
-    isLedOn = true;
   } else {
     digitalWrite(D2, LOW);
-    isLedOn = false;
   }
+
+  isLedOn = !isLedOn;
   digitalWrite(D0, HIGH);
   delay(100);
 }
