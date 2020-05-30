@@ -42,6 +42,7 @@ const char *mqttServer = "______";
 const int mqttPort = 1883;
 
 String mqttTopic = "condo/" + clientId + "/status";
+String mqttTopicProgress = "condo/" + clientId + "/progress";
 
 void setup() {
   Serial.begin(115200);
@@ -67,6 +68,13 @@ String getMode() {
   if (currentMode == ON) return "on";
   if (currentMode == OFF) return "off";
   return "counting";
+}
+
+void updateCountingProgress() {
+  if (!client.connected()) return;
+  if ((currentCount % 60) != 0) return;
+
+  client.publish(mqttTopicProgress.c_str(), String(currentCount).c_str(), false);
 }
 
 void updateMode(PlugMode status, bool shouldUpdateMQTT = true) {
@@ -283,6 +291,7 @@ void defaultMode() {
     setRelayState(ON);
   }
 
+  updateCountingProgress();
   currentCount += 1;
 
   delay(1000);
