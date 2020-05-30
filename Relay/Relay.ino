@@ -1,3 +1,11 @@
+/*
+  Model: Generic ESP8600
+  Relay wiring (Default ON)
+  - CO: 220V
+  - NO: NONE
+  - NC: Plug
+*/
+
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
@@ -43,6 +51,16 @@ void setup() {
   digitalWrite(D2, LOW);
 
   setupConnection();
+}
+
+void setRelayState(PlugMode state) {
+  // Switch ON
+  if (state == ON) {
+    return digitalWrite(D0, LOW);
+  }
+
+  // Switch OFF
+  digitalWrite(D0, HIGH);
 }
 
 String getMode() {
@@ -120,7 +138,7 @@ void setupMqtt()
       Serial.print("failed, rc = ");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
-      
+
       // Wait 5 seconds before retrying
       delay(5000);
     }
@@ -262,17 +280,17 @@ void defaultMode() {
     }
 
     isLedOn = !isLedOn;
-    digitalWrite(D0, HIGH);
+    setRelayState(ON);
   }
 
   currentCount += 1;
-  
+
   delay(1000);
 }
 
 void offMode() {
   // Relay - OFF
-  digitalWrite(D0, LOW);
+  setRelayState(OFF);
 
   digitalWrite(D2, HIGH);
   delay(200);
@@ -288,7 +306,7 @@ void onMode() {
   }
 
   isLedOn = !isLedOn;
-  digitalWrite(D0, HIGH);
+  setRelayState(ON);
   delay(100);
 }
 
