@@ -263,7 +263,7 @@ void setupConnection() {
   setupOTA();
 }
 
-void defaultMode() {
+void countdownMode() {
   // Timer is done
   if (currentCount > COUNTER_SEC_3HR) {
     updateMode(OFF);
@@ -331,7 +331,7 @@ void loop() {
 
   switch (currentMode) {
     case OFF: offMode(); break;
-    case ON: onMode(); break;
-    default: defaultMode(); break;
+    case COUNTING: countdownMode(); break;
+    default: onMode(); break;
   }
 }
