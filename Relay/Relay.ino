@@ -20,7 +20,7 @@
 #define RX 3
 
 enum PlugMode { COUNTING, ON, OFF };
-PlugMode currentMode = COUNTING;
+PlugMode currentMode = ON;
 
 // 60Sec * 60Min * 3Hr
 int COUNTER_SEC_3HR = 10800;
