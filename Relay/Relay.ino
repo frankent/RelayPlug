@@ -30,6 +30,8 @@ bool isLedOn = false;
 
 int currentCount = -3;
 
+int pingTimer = 0;
+
 const char *ssid = "______";
 const char *password = "______";
 
@@ -42,6 +44,7 @@ const char *mqttServer = "______";
 const int mqttPort = 1883;
 
 String mqttTopic = "condo/" + clientId + "/status";
+String mqttPingTopic = "condo/" + clientId + "/ping";
 String mqttTopicProgress = "condo/" + clientId + "/progress";
 
 void setup() {
@@ -151,6 +154,11 @@ void setupMqtt()
       delay(5000);
     }
   }
+}
+
+void pingAlive() {
+  if (!client.connected()) return;
+  client.publish(mqttPingTopic.c_str(), "Ping", false);
 }
 
 void handleMQTT() {
@@ -284,13 +292,15 @@ void countdownMode() {
 
   if (currentCount < 0) {
     digitalWrite(D2, HIGH);
-    delay(300);
+    delay(250);
     digitalWrite(D2, LOW);
-    delay(300);
+    delay(250);
     digitalWrite(D2, HIGH);
-    delay(300);
+    delay(250);
     digitalWrite(D2, LOW);
-    delay(300);
+    delay(250);
+
+    pingTimer += 1000;
   } else {
     if (!isLedOn) {
       digitalWrite(D2, HIGH);
@@ -305,6 +315,7 @@ void countdownMode() {
   updateCountingProgress();
   currentCount += 1;
 
+  pingTimer += 1000;
   delay(1000);
 }
 
@@ -313,9 +324,11 @@ void offMode() {
   setRelayState(OFF);
 
   digitalWrite(D2, HIGH);
-  delay(200);
+  delay(500);
   digitalWrite(D2, LOW);
-  delay(200);
+  delay(500);
+
+  pingTimer += 1000;
 }
 
 void onMode() {
@@ -328,6 +341,8 @@ void onMode() {
   isLedOn = !isLedOn;
   setRelayState(ON);
   delay(100);
+  
+  pingTimer += 100;
 }
 
 void loop() {
@@ -344,5 +359,10 @@ void loop() {
     case OFF: offMode(); break;
     case COUNTING: countdownMode(); break;
     default: onMode(); break;
+  }
+
+  if (pingTimer >= 60000) {
+    pingTimer = 0;
+    pingAlive();
   }
 }
