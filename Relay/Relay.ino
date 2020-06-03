@@ -4,6 +4,9 @@
   - CO: 220V
   - NO: NONE
   - NC: Plug
+
+  Support OTA update via Arduino IDE and Web Updater
+  for web updater please upload *.bin file as "FIRMWARE"
 */
 
 #include <Arduino.h>
@@ -12,6 +15,10 @@
 #include <WiFiUdp.h>
 #include <ArduinoOTA.h>
 #include <PubSubClient.h>
+
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266HTTPUpdateServer.h>
 
 #define LED_BUILTIN 1
 #define D0 0
@@ -32,15 +39,18 @@ int currentCount = -3;
 
 int pingTimer = 0;
 
-const char *ssid = "______";
-const char *password = "______";
+const char *ssid = "ChaneeIndy";
+const char *password = "0954492332";
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
+ESP8266WebServer httpServer(80);
+ESP8266HTTPUpdateServer httpUpdater;
+
 String clientId = "ESP-01s-WifiPlug";
 
-const char *mqttServer = "______";
+const char *mqttServer = "cmrabbit.com";
 const int mqttPort = 1883;
 
 String mqttTopic = "condo/" + clientId + "/status";
@@ -239,6 +249,17 @@ void setupOTA() {
   ArduinoOTA.begin();
 }
 
+// To upload through terminal you can use: curl -F "image=@firmware.bin" {clientId}.local/update
+void setupWebUpdater() {
+  MDNS.begin(clientId);
+  
+  httpUpdater.setup(&httpServer);
+  httpServer.begin();
+
+  MDNS.addService("http", "tcp", 80);
+  Serial.printf("HTTPUpdateServer ready! Open http://%s.local/update in your browser\n", clientId.c_str());
+}
+
 bool isWifiExist() {
   int numberOfNetworks = WiFi.scanNetworks();
   bool isExist = false;
@@ -280,6 +301,7 @@ void setupConnection() {
 
   setupMqtt();
   setupOTA();
+  setupWebUpdater();
 }
 
 void countdownMode() {
@@ -352,6 +374,8 @@ void loop() {
     } else {
       handleMQTT();
       ArduinoOTA.handle();
+      httpServer.handleClient();
+      MDNS.update();
     }
   }
 

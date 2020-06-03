@@ -1,5 +1,11 @@
 ## ESP-01s + Single relay module
-Please use ESP-01s (version 2) only because v1 has a problem on power supply
+
+Please use ESP-01s (version 2) only because v1 has a problem on power consumption
+
+### Support OTA update
+
+- Arduino IDE
+- Web Updater (Please go `{ip_address}/update` then upload `*.bin` as `FIRMWARE`)
 
 ![Single relay module](https://gd.lnwfile.com/xbuij8.jpg "single relay")
 
