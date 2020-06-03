@@ -153,6 +153,17 @@ void setupMqtt()
   }
 }
 
+void handleMQTT() {
+  if (WiFi.status() != WL_CONNECTED) return;
+
+  // In case of MQTT got disconnected
+  if (!client.connected()) {
+    setupOTA();
+  }
+
+  client.loop();
+}
+
 void setupOTA() {
   if (WiFi.status() != WL_CONNECTED) return;
 
@@ -324,7 +335,7 @@ void loop() {
     if (WiFi.status() == WL_DISCONNECTED) {
       setupConnection();
     } else {
-      client.loop();
+      handleMQTT();
       ArduinoOTA.handle();
     }
   }
