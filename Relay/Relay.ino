@@ -386,6 +386,9 @@ void loop() {
   }
 
   if (pingTimer >= 60000) {
+    // Try to scan for WIFI to connect
+    shouldConnectWifi = true;
+    
     pingTimer = 0;
     pingAlive();
   }
