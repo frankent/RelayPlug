@@ -20,11 +20,14 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPUpdateServer.h>
 
-#define LED_BUILTIN 1
-#define D0 0
-#define D2 2
-#define TX 1
-#define RX 3
+// #define LED_BUILTIN 1
+// #define D0 0
+// #define D2 2
+// #define TX 1
+// #define RX 3
+
+#define LED_BUILTIN 2
+#define RELAY_PIN 0
 
 enum PlugMode { COUNTING, ON, OFF };
 PlugMode currentMode = ON;
@@ -59,10 +62,10 @@ String mqttTopicProgress = "condo/" + clientId + "/progress";
 
 void setup() {
   Serial.begin(115200);
-  pinMode(D0, OUTPUT);
-  pinMode(D2, OUTPUT);
+  pinMode(RELAY_PIN, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);
 
-  digitalWrite(D2, LOW);
+  digitalWrite(LED_BUILTIN, LOW);
 
   setupConnection();
 }
@@ -70,11 +73,11 @@ void setup() {
 void setRelayState(PlugMode state) {
   // Switch ON
   if (state == ON) {
-    return digitalWrite(D0, LOW);
+    return digitalWrite(RELAY_PIN, LOW);
   }
 
   // Switch OFF
-  digitalWrite(D0, HIGH);
+  digitalWrite(RELAY_PIN, HIGH);
 }
 
 String getMode() {
@@ -136,7 +139,7 @@ void onMessageArrive(char *topic, byte *payload, unsigned int length) {
 
 void setupMqtt()
 {
-  if (WiFi.status() != WL_CONNECTED) return;
+  if (!WiFi.isConnected()) return;
   if (client.connected()) return;
 
   client.setServer(mqttServer, mqttPort);
@@ -172,18 +175,20 @@ void pingAlive() {
 }
 
 void handleMQTT() {
-  if (WiFi.status() != WL_CONNECTED) return;
+  if (!WiFi.isConnected()) return;
 
   // In case of MQTT got disconnected
   if (!client.connected()) {
+    setupMqtt();
     setupOTA();
+    setupWebUpdater();
   }
 
   client.loop();
 }
 
 void setupOTA() {
-  if (WiFi.status() != WL_CONNECTED) return;
+  if (!WiFi.isConnected()) return;
 
   // Port defaults to 8266
   // ArduinoOTA.setPort(8266);
@@ -288,10 +293,22 @@ void setupConnection() {
 
   if (!isWifiExist()) return;
 
+  bool isTimeout = false;
+  int waitingCount = 0;
+
   Serial.print("Connecting.");
-  while (WiFi.waitForConnectResult() != WL_CONNECTED) {
+  while ((WiFi.waitForConnectResult() != WL_CONNECTED) && !isTimeout) {
     Serial.print(".");
     delay(100);
+    waitingCount += 1;
+    if (waitingCount >= 100) {
+      isTimeout = true;
+    }
+  }
+
+  if (!WiFi.isConnected()) {
+    Serial.println("WiFi - State: Timeout");
+    return;
   }
 
   Serial.println("Connected");
@@ -313,21 +330,21 @@ void countdownMode() {
   };
 
   if (currentCount < 0) {
-    digitalWrite(D2, HIGH);
+    digitalWrite(LED_BUILTIN, HIGH);
     delay(250);
-    digitalWrite(D2, LOW);
+    digitalWrite(LED_BUILTIN, LOW);
     delay(250);
-    digitalWrite(D2, HIGH);
+    digitalWrite(LED_BUILTIN, HIGH);
     delay(250);
-    digitalWrite(D2, LOW);
+    digitalWrite(LED_BUILTIN, LOW);
     delay(250);
 
     pingTimer += 1000;
   } else {
     if (!isLedOn) {
-      digitalWrite(D2, HIGH);
+      digitalWrite(LED_BUILTIN, HIGH);
     } else {
-      digitalWrite(D2, LOW);
+      digitalWrite(LED_BUILTIN, LOW);
     }
 
     isLedOn = !isLedOn;
@@ -345,9 +362,9 @@ void offMode() {
   // Relay - OFF
   setRelayState(OFF);
 
-  digitalWrite(D2, HIGH);
+  digitalWrite(LED_BUILTIN, HIGH);
   delay(500);
-  digitalWrite(D2, LOW);
+  digitalWrite(LED_BUILTIN, LOW);
   delay(500);
 
   pingTimer += 1000;
@@ -355,9 +372,9 @@ void offMode() {
 
 void onMode() {
   if (!isLedOn) {
-    digitalWrite(D2, HIGH);
+    digitalWrite(LED_BUILTIN, HIGH);
   } else {
-    digitalWrite(D2, LOW);
+    digitalWrite(LED_BUILTIN, LOW);
   }
 
   isLedOn = !isLedOn;
@@ -367,9 +384,23 @@ void onMode() {
   pingTimer += 100;
 }
 
+void getWiFiState() {
+  switch(WiFi.status()) {
+    case WL_IDLE_STATUS: Serial.println("WIFI: IDLE");  break;
+    case WL_NO_SSID_AVAIL: Serial.println("WIFI: NO_SSID");  break;
+    case WL_SCAN_COMPLETED: Serial.println("WIFI: SCAN_COMPLETED");  break;
+    case WL_CONNECTED: Serial.println("WIFI: CONNECTED");  break;
+    case WL_CONNECT_FAILED: Serial.println("WIFI: CONNECT_FAILED");  break;
+    case WL_CONNECTION_LOST: Serial.println("WIFI: CONNECTION_LOST");  break;
+    case WL_DISCONNECTED: Serial.println("WIFI: DISCONNECTED");  break;
+    default: Serial.println("WIFI: I DONT KNOW");  break;
+  }
+}
+
 void loop() {
   if (shouldConnectWifi) {
-    if (WiFi.status() == WL_DISCONNECTED) {
+    if (!WiFi.isConnected()) {
+      Serial.println("Connect / Reconnect to WIFI");
       setupConnection();
     } else {
       handleMQTT();
@@ -383,6 +414,10 @@ void loop() {
     case OFF: offMode(); break;
     case COUNTING: countdownMode(); break;
     default: onMode(); break;
+  }
+
+  if ((pingTimer % 10000) == 0) {
+    getWiFiState();
   }
 
   if (pingTimer >= 60000) {
