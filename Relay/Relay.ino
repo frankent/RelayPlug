@@ -145,7 +145,7 @@ void setupMqtt()
   client.setServer(mqttServer, mqttPort);
   client.setCallback(onMessageArrive);
 
-  while (!client.connected())
+  while (WiFi.isConnected() && !client.connected())
   {
     Serial.println("Attempting MQTT connection");
     // Attempt to connect
