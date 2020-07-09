@@ -418,12 +418,12 @@ void loop() {
 
   if ((pingTimer % 10000) == 0) {
     getWiFiState();
+    
+    // Try to scan for WIFI to connect
+    shouldConnectWifi = true;
   }
 
   if (pingTimer >= 60000) {
-    // Try to scan for WIFI to connect
-    shouldConnectWifi = true;
-    
     pingTimer = 0;
     pingAlive();
   }
