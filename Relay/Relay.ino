@@ -145,7 +145,7 @@ void setupMqtt()
   client.setServer(mqttServer, mqttPort);
   client.setCallback(onMessageArrive);
 
-  while (!client.connected())
+  while (WiFi.isConnected() && !client.connected())
   {
     Serial.println("Attempting MQTT connection");
     // Attempt to connect
@@ -418,12 +418,12 @@ void loop() {
 
   if ((pingTimer % 10000) == 0) {
     getWiFiState();
+    
+    // Try to scan for WIFI to connect
+    shouldConnectWifi = true;
   }
 
   if (pingTimer >= 60000) {
-    // Try to scan for WIFI to connect
-    shouldConnectWifi = true;
-    
     pingTimer = 0;
     pingAlive();
   }
