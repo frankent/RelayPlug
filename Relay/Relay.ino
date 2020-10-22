@@ -53,7 +53,7 @@ ESP8266HTTPUpdateServer httpUpdater;
 
 String clientId = "ESP-01s-WifiPlug";
 
-const char *mqttServer = "cmrabbit.com";
+const char *mqttServer = "mqtt.cmrabbit.com";
 const int mqttPort = 1883;
 
 String mqttTopic = "condo/" + clientId + "/status";
