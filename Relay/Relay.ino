@@ -54,6 +54,8 @@ ESP8266HTTPUpdateServer httpUpdater;
 String clientId = "ESP-01s-WifiPlug";
 
 const char *mqttServer = "mqtt.cmrabbit.com";
+const char *mqttUsername = "frankent";
+const char *mqttPassword = "NoPassword";
 const int mqttPort = 1883;
 
 String mqttTopic = "condo/" + clientId + "/status";
@@ -149,7 +151,7 @@ void setupMqtt()
   {
     Serial.println("Attempting MQTT connection");
     // Attempt to connect
-    if (client.connect(clientId.c_str()))
+    if (client.connect(clientId.c_str(), mqttUsername, mqttPassword))
     {
       Serial.println("MQTT connected");
       client.subscribe(mqttTopic.c_str());
