@@ -116,16 +116,16 @@ void updateMode(PlugMode status, bool shouldUpdateMQTT = true) {
   }
 
   currentMode = status;
-
-  if (!shouldUpdateMQTT) return;
-  if (!client.connected()) return;
-
+  
   String currentModeText = getMode();
 
   String msg = "Plug is ";
   msg += currentModeText.c_str();
 
   sendPost(msg);
+
+  if (!shouldUpdateMQTT) return;
+  if (!client.connected()) return;
   
   client.publish(mqttTopic.c_str(), currentModeText.c_str(), false);
 }
