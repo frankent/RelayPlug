@@ -10,6 +10,7 @@
 */
 
 #include <Arduino.h>
+#include <ESP8266HTTPClient.h>
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 #include <WiFiUdp.h>
@@ -62,6 +63,20 @@ String mqttTopic = "condo/" + clientId + "/status";
 String mqttPingTopic = "condo/" + clientId + "/ping";
 String mqttTopicProgress = "condo/" + clientId + "/progress";
 
+String serverName = "http://iot.cmrabbit.com:88/line";
+
+void sendPost(String msg) {
+  // https://techtutorialsx.com/2016/07/21/esp8266-post-requests/
+  HTTPClient http;
+  http.begin(serverName);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Authorization", "Basic a2VpdHRpcmF0OkdkaXVwbzUwMA==");
+
+  String json = "{\"message\":\"" + msg + "\"}";
+  int httpResponseCode = http.POST(json); 
+  http.end(); 
+}
+
 void setup() {
   Serial.begin(115200);
   pinMode(RELAY_PIN, OUTPUT);
@@ -106,6 +121,12 @@ void updateMode(PlugMode status, bool shouldUpdateMQTT = true) {
   if (!client.connected()) return;
 
   String currentModeText = getMode();
+
+  String msg = "Plug is ";
+  msg += currentModeText.c_str();
+
+  sendPost(msg);
+  
   client.publish(mqttTopic.c_str(), currentModeText.c_str(), false);
 }
 
